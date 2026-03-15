@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HabitCircles — Circles Mini App</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@0;1&display=swap');
+
+:root {
+  --bg:#0b0d11; --surface:#13151c; --s2:#1a1d28; --s3:#21253a;
+  --b:rgba(255,255,255,0.07); --b2:rgba(255,255,255,0.13);
+  --t:#eef0f5; --t2:#7d8799; --t3:#3f475c;
+  --accent:#6c5ce7; --al:#a29bfe;
+  --green:#00cec9; --green2:#55efc4; --gdim:rgba(0,206,201,0.1);
+  --amber:#fdcb6e; --adim:rgba(253,203,110,0.1);
+  --coral:#e17055;
+  --r:16px; --rsm:10px; --rxs:7px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t);min-height:100vh;overflow-x:hidden}
+
+/* ── NAV ── */
+.nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:13px 20px;background:rgba(11,13,17,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--b)}
+.nav-logo{display:flex;align-items:center;gap:9px}
+.nav-mark{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--green));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
+.nav-text{font-family:'Instrument Serif',serif;font-size:17px;letter-spacing:-.3px}
+.nav-text span{color:var(--al);font-style:italic}
+.wallet-btn{display:flex;align-items:center;gap:7px;background:var(--s2);border:1px solid var(--b2);border-radius:40px;padding:7px 14px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--t2);cursor:pointer;transition:all .2s}
+.wallet-btn:hover{border-color:var(--accent);color:var(--t)}
+.wdot{width:6px;height:6px;border-radius:50%;background:var(--t3);flex-shrink:0}
+.wdot.on{background:var(--green2);box-shadow:0 0 5px var(--green2)}
+
+/* ── PAGE NAV ARROWS ── */
+.page-nav{display:flex;align-items:center;justify-content:space-between;padding:10px 20px 0;max-width:600px;margin:0 auto}
+.page-nav-btn{display:flex;align-items:center;gap:6px;background:none;border:1px solid var(--b2);border-radius:40px;padding:7px 14px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--t2);cursor:pointer;transition:all .2s}
+.page-nav-btn:hover{border-color:var(--al);color:var(--t)}
+.page-nav-btn:disabled{opacity:.25;cursor:not-allowed}
+.page-nav-center{font-size:12px;color:var(--t3);font-weight:500;letter-spacing:.4px;text-transform:uppercase}
+
+/* ── PAGE SYSTEM ── */
+.page{display:none}
+.page.active{display:block}
+
+/* ════════ ONBOARDING ════════ */
+.onboard{max-width:560px;margin:0 auto;padding:28px 20px 60px}
+.onboard-hero{margin-bottom:28px}
+.onboard-hero h1{font-family:'Instrument Serif',serif;font-size:36px;font-weight:400;line-height:1.1;letter-spacing:-.5px;margin-bottom:10px}
+.onboard-hero h1 em{color:var(--al);font-style:italic}
+.onboard-hero p{font-size:14px;color:var(--t2);line-height:1.65;max-width:420px}
+.onboard-hero p strong{color:var(--amber);font-weight:500}
+
+.steps-strip{display:flex;margin-bottom:28px;background:var(--surface);border:1px solid var(--b);border-radius:var(--r);overflow:hidden}
+.step{flex:1;padding:12px 8px;text-align:center;border-right:1px solid var(--b)}
+.step:last-child{border-right:none}
+.step-num{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:10px;font-weight:600;background:var(--s3);color:var(--t3);margin-bottom:4px}
+.step-label{font-size:10px;color:var(--t3)}
+.step.active .step-num{background:var(--accent);color:#fff}
+.step.active .step-label{color:var(--t2)}
+
+.section-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px}
+.section-head h2{font-size:11px;font-weight:600;letter-spacing:.9px;text-transform:uppercase;color:var(--t3)}
+.section-head span{font-size:11px;color:var(--t3)}
+
+/* ── Habit card grid ── */
+.habit-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}
+
+.habit-card{position:relative;overflow:visible;background:var(--surface);border:1px solid var(--b);border-radius:var(--r);user-select:none;transition:border-color .18s,background .18s}
+.habit-card:hover{border-color:var(--b2);background:var(--s2)}
+.habit-card.selected{border-color:var(--accent);background:rgba(108,92,231,.09)}
+.hcard-bar{position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:16px 0 0 16px;opacity:0;transition:opacity .2s}
+.habit-card.selected .hcard-bar{opacity:1}
+.hcard-inner{padding:12px 12px 10px 15px}
+.hcard-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.hcard-icon{width:34px;height:34px;border-radius:9px;font-size:17px;display:flex;align-items:center;justify-content:center;background:var(--s2);flex-shrink:0;transition:background .2s}
+
+/* Two-button row: [select] [details] */
+.hcard-actions{display:flex;gap:6px;margin-top:9px}
+.hcard-select-btn{flex:1;padding:7px;border-radius:var(--rxs);font-size:11px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .2s;border:1px solid var(--b2);background:var(--s2);color:var(--t2)}
+.hcard-select-btn:hover{border-color:var(--al);color:var(--al)}
+.habit-card.selected .hcard-select-btn{background:var(--accent);border-color:var(--accent);color:#fff}
+.hcard-info-btn{width:30px;padding:7px;border-radius:var(--rxs);font-size:11px;cursor:pointer;transition:all .2s;border:1px solid var(--b2);background:transparent;color:var(--t3);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hcard-info-btn:hover{border-color:var(--al);color:var(--al)}
+
+.hcard-check{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--b2);display:flex;align-items:center;justify-content:center;transition:all .18s;flex-shrink:0}
+.habit-card.selected .hcard-check{background:var(--accent);border-color:var(--accent)}
+.chk-svg{opacity:0;transition:opacity .15s}
+.habit-card.selected .chk-svg{opacity:1}
+
+.hcard-tag{display:inline-flex;font-size:10px;font-weight:500;padding:2px 8px;border-radius:40px;border:1px solid var(--b);color:var(--t3);margin-bottom:4px;transition:all .2s}
+.hcard-name{font-size:12px;font-weight:600;color:var(--t);line-height:1.3}
+
+/* ── Inline popover detail (opens above card) ── */
+.hcard-popover{
+  display:none;position:absolute;left:0;right:0;bottom:calc(100% + 8px);z-index:200;
+  background:var(--s2);border:1px solid var(--b2);border-radius:14px;padding:16px;
+  box-shadow:0 -8px 32px rgba(0,0,0,.45);
+  animation:popIn .18s ease;
+}
+@keyframes popIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.hcard-popover.open{display:block}
+.hcard-popover::after{content:'';position:absolute;bottom:-6px;left:24px;width:12px;height:12px;background:var(--s2);border-right:1px solid var(--b2);border-bottom:1px solid var(--b2);transform:rotate(45deg)}
+.pop-tag{font-size:10px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;padding:2px 8px;border-radius:40px;margin-bottom:8px;display:inline-flex}
+.pop-name{font-family:'Instrument Serif',serif;font-size:17px;font-weight:400;line-height:1.2;margin-bottom:7px;color:var(--t)}
+.pop-desc{font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:10px}
+.pop-why{background:var(--s3);border-radius:var(--rxs);padding:10px 12px;margin-bottom:10px}
+.pop-why-lbl{font-size:9px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--t3);margin-bottom:5px}
+.pop-why-text{font-size:11px;color:var(--t2);line-height:1.55}
+.pop-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px}
+.pop-stat{background:var(--s3);border-radius:var(--rxs);padding:8px 10px;text-align:center}
+.pop-stat-val{font-size:13px;font-weight:600}
+.pop-stat-lbl{font-size:9px;color:var(--t3);margin-top:2px}
+.pop-close-row{display:flex;justify-content:flex-end}
+.pop-close{background:none;border:1px solid var(--b);border-radius:var(--rxs);padding:5px 10px;font-size:11px;color:var(--t3);cursor:pointer;font-family:'DM Sans',sans-serif}
+.pop-close:hover{color:var(--t);border-color:var(--b2)}
+
+/* Tally + CTA */
+.select-tally{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding:11px 15px;background:var(--surface);border:1px solid var(--b);border-radius:var(--rsm)}
+.tally-left{font-size:13px;color:var(--t2)}
+.tally-left strong{color:var(--al);font-weight:600}
+.tally-dots{display:flex;gap:5px}
+.tdot{width:7px;height:7px;border-radius:50%;background:var(--s3);transition:all .2s}
+.tdot.on{background:var(--accent)}
+.cta-btn{width:100%;padding:15px;border-radius:var(--r);background:var(--accent);color:#fff;border:none;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.cta-btn:hover:not(:disabled){background:#7c6ef7;transform:translateY(-1px)}
+.cta-btn:disabled{opacity:.28;cursor:not-allowed;transform:none}
+
+/* ════════ DASHBOARD ════════ */
+.dashboard{padding:16px 20px;max-width:600px;margin:0 auto}
+
+.tabs{display:flex;gap:3px;background:var(--surface);border:1px solid var(--b);border-radius:var(--r);padding:4px;margin-bottom:18px}
+.tab{flex:1;text-align:center;padding:8px 6px;font-size:13px;font-weight:500;border-radius:11px;cursor:pointer;color:var(--t3);transition:all .18s}
+.tab.active{background:var(--s2);color:var(--t)}
+.tc{display:none}
+.tc.active{display:block}
+
+/* Hero ring */
+.hero-banner{border-radius:var(--r);padding:18px 20px 15px;margin-bottom:14px;position:relative;overflow:hidden;background:var(--surface);border:1px solid var(--b)}
+.hero-banner::after{content:'';position:absolute;top:-60px;right:-60px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(108,92,231,.14) 0%,transparent 70%);pointer-events:none}
+.hero-top{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+.ring-wrap{position:relative;width:60px;height:60px;flex-shrink:0}
+.ring-wrap svg{width:60px;height:60px;transform:rotate(-90deg)}
+.rbg{fill:none;stroke:var(--s3);stroke-width:5}
+.rfill{fill:none;stroke-width:5;stroke-linecap:round;transition:stroke-dashoffset .7s ease}
+.rlabel{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:15px;color:var(--t)}
+.hero-info h3{font-size:16px;font-weight:600;margin-bottom:3px}
+.hero-info p{font-size:12px;color:var(--t2);line-height:1.5}
+.day-bar-wrap{display:flex;align-items:center;gap:9px}
+.day-bar{flex:1;height:3px;background:var(--s3);border-radius:2px;overflow:hidden}
+.day-bar-fill{height:100%;border-radius:2px;transition:width .5s ease;background:linear-gradient(90deg,var(--accent),var(--al))}
+.day-bar-lbl{font-size:10px;color:var(--t3);white-space:nowrap}
+
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.stat-card{background:var(--surface);border:1px solid var(--b);border-radius:var(--rsm);padding:12px;text-align:center}
+.sval{font-family:'Instrument Serif',serif;font-size:24px;font-weight:400;line-height:1}
+.sval.cg{color:var(--green2)} .sval.ca{color:var(--amber)} .sval.cv{color:var(--al)}
+.slbl{font-size:10px;color:var(--t3);margin-top:3px;text-transform:uppercase;letter-spacing:.3px}
+
+.reward-strip{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid rgba(253,203,110,.2);border-radius:var(--rsm);padding:11px 14px;margin-bottom:18px}
+.rs-icon{font-size:19px;flex-shrink:0}
+.rs-text{flex:1}
+.rs-title{font-size:13px;font-weight:600}
+.rs-sub{font-size:11px;color:var(--t3);margin-top:1px}
+.rs-badge{font-size:11px;font-weight:600;color:var(--amber);background:var(--adim);border:1px solid rgba(253,203,110,.2);border-radius:40px;padding:4px 10px;white-space:nowrap}
+
+.today-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.today-hdr h2{font-size:11px;font-weight:600;color:var(--t3);letter-spacing:.8px;text-transform:uppercase}
+.today-date{font-size:11px;color:var(--t3)}
+
+.habit-list{display:flex;flex-direction:column;gap:6px;margin-bottom:20px}
+.habit-row{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid var(--b);border-radius:var(--r);padding:12px 13px;transition:all .2s;cursor:pointer;position:relative;overflow:hidden}
+.habit-row::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;opacity:0;transition:opacity .2s}
+.habit-row:hover{border-color:var(--b2)}
+.habit-row.done{border-color:rgba(0,206,201,.22);background:var(--gdim)}
+.habit-row.done::before{opacity:1;background:var(--green)}
+.hr-icon{width:36px;height:36px;border-radius:9px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;transition:background .2s}
+.hr-info{flex:1;min-width:0}
+.hr-name{font-size:13px;font-weight:500;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hr-meta{display:flex;align-items:center;gap:7px}
+.hr-tag{font-size:10px}
+.hr-sub{font-size:11px;color:var(--t3)}
+.habit-row.done .hr-sub{color:var(--green2)}
+.hr-bar{width:50px;height:3px;background:var(--s3);border-radius:2px;overflow:hidden;flex-shrink:0}
+.hr-bar-fill{height:100%;border-radius:2px;transition:width .5s}
+.chk-row{display:flex;align-items:center;gap:6px;flex-shrink:0}
+/* ── Unverified / partial score badge ── */
+.unverified-badge{font-size:9px;font-weight:600;padding:2px 7px;border-radius:40px;background:rgba(162,155,254,.12);color:var(--al);border:1px solid rgba(162,155,254,.25);white-space:nowrap}
+.verify-badge{font-size:9px;font-weight:600;padding:2px 7px;border-radius:40px;background:rgba(253,203,110,.12);color:var(--amber);border:1px solid rgba(253,203,110,.25);white-space:nowrap}
+.chkbtn{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--b2);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;font-size:12px;color:var(--t3)}
+.chkbtn:hover{border-color:var(--green);color:var(--green)}
+.habit-row.done .chkbtn{background:var(--green);border-color:var(--green);color:#0b0d11}
+
+/* ── VERIFY MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.75);align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--b2);border-radius:20px;padding:26px;max-width:380px;width:100%}
+.modal h3{font-size:17px;font-weight:600;margin-bottom:7px}
+.modal p{font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:18px}
+.modal-btns{display:flex;gap:9px}
+.modal-btns button{flex:1;padding:12px;border-radius:var(--rsm);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-cancel{background:var(--s2);border:1px solid var(--b);color:var(--t2)}
+.btn-confirm{background:var(--accent);border:1px solid var(--accent);color:#fff}
+
+/* Upload zone */
+.upload-zone{border:1.5px dashed var(--b2);border-radius:var(--rsm);padding:24px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:16px;position:relative}
+.upload-zone:hover{border-color:var(--al);background:rgba(162,155,254,.05)}
+.upload-zone.has-file{border-color:var(--green);background:var(--gdim)}
+.upload-icon{font-size:26px;margin-bottom:8px}
+.upload-text{font-size:13px;color:var(--t2)}
+.upload-sub{font-size:11px;color:var(--t3);margin-top:4px}
+.upload-preview{max-width:100%;max-height:120px;border-radius:8px;margin-top:10px;display:none}
+.upload-preview.show{display:block}
+#verify-file-input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+
+/* ── CONGRATULATIONS POPUP BANNER ── */
+.congrats-overlay{
+  display:none;position:fixed;inset:0;z-index:500;
+  background:rgba(0,0,0,0);
+  transition:background .3s ease;
+  align-items:flex-end;justify-content:center;
+  padding:0 0 0 0;
+}
+.congrats-overlay.open{display:flex;background:rgba(0,0,0,.55)}
+.congrats-banner{
+  width:100%;max-width:540px;
+  background:var(--surface);
+  border:1px solid var(--b2);
+  border-radius:28px 28px 0 0;
+  padding:28px 24px 36px;
+  text-align:center;
+  transform:translateY(100%);
+  transition:transform .4s cubic-bezier(.34,1.2,.64,1);
+  position:relative;
+}
+.congrats-overlay.open .congrats-banner{transform:translateY(0)}
+
+/* Drag handle */
+.congrats-handle{width:40px;height:4px;border-radius:2px;background:var(--s3);margin:0 auto 24px}
+
+/* Confetti ring */
+.congrats-ring{
+  width:96px;height:96px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--green));
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 18px;font-size:40px;
+  box-shadow:0 0 0 12px rgba(108,92,231,.12),0 0 0 24px rgba(0,206,201,.06);
+  animation:ringPulse .5s ease forwards;
+}
+@keyframes ringPulse{
+  0%{transform:scale(.6);opacity:0}
+  60%{transform:scale(1.08)}
+  100%{transform:scale(1);opacity:1}
+}
+
+.congrats-day{font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--t3);margin-bottom:6px}
+.congrats-title{font-family:'Instrument Serif',serif;font-size:30px;font-weight:400;line-height:1.15;letter-spacing:-.3px;margin-bottom:8px;color:var(--t)}
+.congrats-title em{color:var(--al);font-style:italic}
+.congrats-sub{font-size:14px;color:var(--t2);line-height:1.6;margin-bottom:22px;max-width:300px;margin-left:auto;margin-right:auto}
+
+.congrats-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:24px}
+.cstat{background:var(--s2);border-radius:var(--rsm);padding:12px 8px;text-align:center}
+.cstat-val{font-family:'Instrument Serif',serif;font-size:22px;font-weight:400;line-height:1}
+.cstat-lbl{font-size:10px;color:var(--t3);margin-top:3px;text-transform:uppercase;letter-spacing:.3px}
+
+.congrats-close-btn{
+  width:100%;padding:15px;border-radius:var(--r);
+  background:linear-gradient(135deg,var(--accent),var(--green));
+  color:#fff;border:none;
+  font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;
+  cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  box-shadow:0 4px 20px rgba(108,92,231,.3);
+}
+.congrats-close-btn:hover{opacity:.9;transform:translateY(-1px)}
+.congrats-dismiss{
+  margin-top:12px;font-size:13px;color:var(--t3);cursor:pointer;
+  background:none;border:none;font-family:'DM Sans',sans-serif;
+  transition:color .15s;width:100%;padding:6px;
+}
+.congrats-dismiss:hover{color:var(--t2)}
+
+/* ── CHECK-IN CELEBRATION ── */
+.checkin-page{max-width:540px;margin:0 auto;padding:32px 20px 60px;text-align:center}
+.checkin-circle{width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--green));display:flex;align-items:center;justify-content:center;margin:0 auto 22px;font-size:36px;animation:popIn .4s ease}
+.checkin-title{font-family:'Instrument Serif',serif;font-size:32px;font-weight:400;letter-spacing:-.3px;margin-bottom:8px}
+.checkin-sub{font-size:14px;color:var(--t2);line-height:1.6;margin-bottom:30px;max-width:340px;margin-left:auto;margin-right:auto}
+.checkin-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:30px}
+.cs-card{background:var(--surface);border:1px solid var(--b);border-radius:var(--rsm);padding:14px}
+.cs-val{font-family:'Instrument Serif',serif;font-size:26px;font-weight:400}
+.cs-lbl{font-size:10px;color:var(--t3);margin-top:3px;text-transform:uppercase;letter-spacing:.3px}
+
+/* Calendar */
+.cal-section{background:var(--surface);border:1px solid var(--b);border-radius:var(--r);padding:18px;margin-bottom:24px;text-align:left}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.cal-month{font-size:14px;font-weight:600}
+.cal-days-hdr{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:6px}
+.cal-day-hdr{font-size:10px;color:var(--t3);text-align:center;padding:3px 0}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-cell{aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;position:relative;color:var(--t3)}
+.cal-cell.in-challenge{color:var(--t2);background:var(--s2)}
+.cal-cell.in-challenge:hover{background:var(--s3);color:var(--t)}
+.cal-cell.done{background:rgba(0,206,201,.15);color:var(--green2)}
+.cal-cell.done::after{content:'✓';position:absolute;top:1px;right:2px;font-size:7px;color:var(--green2)}
+.cal-cell.today-cell{background:var(--accent);color:#fff}
+.cal-cell.today-cell::after{display:none}
+.cal-cell.future-cell{color:var(--t3);cursor:default}
+.cal-cell.future-cell:hover{background:none}
+
+.continue-btn{width:100%;padding:15px;border-radius:var(--r);background:var(--accent);color:#fff;border:none;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px}
+.continue-btn:hover{background:#7c6ef7;transform:translateY(-1px)}
+.secondary-btn{width:100%;padding:12px;border-radius:var(--r);background:transparent;color:var(--t2);border:1px solid var(--b2);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s}
+.secondary-btn:hover{border-color:var(--al);color:var(--t)}
+
+/* ── PROGRESS TAB ── */
+.hmhdr{display:flex;justify-content:space-between;margin-bottom:7px}
+.hm-day{font-size:10px;color:var(--t3);text-align:center;flex:1}
+.hm-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:20px}
+.hm-cell{aspect-ratio:1;border-radius:5px;background:var(--s2);transition:all .2s}
+.hm-cell[data-p="low"]{background:rgba(0,206,201,.18)}
+.hm-cell[data-p="mid"]{background:rgba(0,206,201,.45)}
+.hm-cell[data-p="high"]{background:var(--green)}
+
+.prog-grid{display:flex;flex-direction:column;gap:8px}
+.prog-item{background:var(--surface);border:1px solid var(--b);border-radius:var(--rsm);padding:12px 14px}
+.prog-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.prog-icon{font-size:17px;width:26px;text-align:center}
+.prog-name{flex:1;font-size:13px;font-weight:500}
+.prog-pct{font-size:13px;font-weight:600}
+.prog-bar{height:4px;background:var(--s3);border-radius:3px;overflow:hidden}
+.prog-bar-fill{height:100%;border-radius:3px;transition:width .6s ease}
+
+/* ── LEADERBOARD TAB ── */
+.bot-card{background:var(--surface);border:1px solid var(--b);border-radius:var(--r);padding:15px 17px;margin-bottom:15px}
+.bot-hdr{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+.bot-dot{width:8px;height:8px;border-radius:50%;background:var(--green2);box-shadow:0 0 7px var(--green2);animation:blink 2.2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.bot-title{font-size:13px;font-weight:600}
+.bot-sub{font-size:11px;color:var(--t3);margin-top:1px}
+.bot-meta{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.bot-f{background:var(--s2);border-radius:var(--rxs);padding:9px 11px}
+.bot-fl{font-size:10px;color:var(--t3);letter-spacing:.5px;text-transform:uppercase;margin-bottom:3px}
+.bot-fv{font-size:14px;font-weight:500}
+
+.lb-list{display:flex;flex-direction:column;gap:6px}
+.lb-row{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid var(--b);border-radius:var(--rsm);padding:11px 13px}
+.lb-row.me{border-color:rgba(108,92,231,.4);background:rgba(108,92,231,.06)}
+.lb-rank{font-size:13px;font-weight:600;width:20px;color:var(--t3);text-align:center}
+.lb-rank.top{color:var(--amber)}
+.lb-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+.lb-name{flex:1;font-size:13px;font-weight:500}
+.lb-r{text-align:right}
+.lb-pct{font-size:14px;font-weight:600;color:var(--green2)}
+.lb-crc{font-size:10px;color:var(--amber)}
+
+/* ── Habit card description (visible on card) ── */
+.hcard-desc{font-size:11px;color:var(--t3);line-height:1.5;margin:4px 0 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;transition:color .2s}
+.habit-card:hover .hcard-desc{color:var(--t2)}
+.habit-card.selected .hcard-desc{color:var(--t2)}
+
+/* ── Popover add/remove button ── */
+.pop-action-row{display:flex;gap:8px;margin-bottom:10px}
+.pop-add-btn{flex:1;padding:9px;border-radius:var(--rxs);font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .2s;border:none;color:#fff}
+.pop-add-btn.remove{background:var(--s3);color:var(--t2);border:1px solid var(--b2)}
+.pop-add-btn.remove:hover{border-color:var(--coral);color:var(--coral)}
+
+/* ── Sticky check-in footer on Today tab ── */
+.checkin-footer{
+  position:sticky;bottom:0;z-index:50;
+  background:linear-gradient(to top,var(--bg) 60%,transparent);
+  padding:16px 20px 24px;
+  margin:0 -20px -16px;
+  pointer-events:none;
+}
+.checkin-footer-inner{pointer-events:all}
+.checkin-big-btn{
+  width:100%;padding:17px;border-radius:var(--r);border:none;
+  font-family:'DM Sans',sans-serif;font-size:16px;font-weight:600;
+  cursor:pointer;transition:all .25s;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  background:var(--accent);color:#fff;
+  box-shadow:0 4px 24px rgba(108,92,231,.35);
+}
+.checkin-big-btn:hover:not(:disabled){background:#7c6ef7;transform:translateY(-1px);box-shadow:0 6px 28px rgba(108,92,231,.45)}
+.checkin-big-btn:disabled{opacity:.3;cursor:not-allowed;transform:none;box-shadow:none}
+.checkin-big-btn.all-done{background:linear-gradient(135deg,var(--accent),var(--green));box-shadow:0 4px 24px rgba(0,206,201,.3)}
+.checkin-big-btn.all-done:hover{box-shadow:0 6px 32px rgba(0,206,201,.45)}
+.checkin-progress-hint{text-align:center;font-size:11px;color:var(--t3);margin-top:8px}
+
+/* ── Custom Habit Modal ── */
+.custom-modal{background:var(--surface);border:1px solid var(--b2);border-radius:20px;padding:26px;max-width:400px;width:100%}
+.custom-modal h3{font-size:17px;font-weight:600;margin-bottom:6px}
+.custom-modal p{font-size:13px;color:var(--t2);line-height:1.5;margin-bottom:20px}
+.emoji-text-row{display:flex;gap:10px;margin-bottom:14px;align-items:stretch}
+.emoji-picker-btn{
+  width:56px;height:56px;border-radius:var(--rsm);flex-shrink:0;
+  background:var(--s2);border:1px solid var(--b2);
+  font-size:24px;cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;
+}
+.emoji-picker-btn:hover{border-color:var(--al)}
+.custom-name-input{
+  flex:1;padding:0 14px;border-radius:var(--rsm);
+  background:var(--s2);border:1px solid var(--b2);
+  font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--t);
+  outline:none;transition:border-color .2s;
+}
+.custom-name-input:focus{border-color:var(--accent)}
+.custom-name-input::placeholder{color:var(--t3)}
+.emoji-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-bottom:18px;max-height:180px;overflow-y:auto}
+.emoji-opt{font-size:20px;padding:6px;border-radius:8px;cursor:pointer;text-align:center;transition:background .15s;border:1.5px solid transparent}
+.emoji-opt:hover{background:var(--s3)}
+.emoji-opt.picked{background:var(--s3);border-color:var(--accent)}
+.custom-tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
+.ctag{padding:5px 12px;border-radius:40px;font-size:12px;font-weight:500;border:1px solid var(--b2);background:var(--s2);color:var(--t3);cursor:pointer;transition:all .2s}
+.ctag:hover{border-color:var(--al);color:var(--al)}
+.ctag.picked{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* Toast */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--s2);border:1px solid var(--b2);border-radius:40px;padding:10px 20px;font-size:13px;font-weight:500;white-space:nowrap;transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:600;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.ok{border-color:rgba(85,239,196,.4);color:var(--green2)}
+
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:var(--s3);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">
+    <div class="nav-mark">HC</div>
+    <div class="nav-text">Habit<span>Circles</span></div>
+  </div>
+  <button class="wallet-btn" onclick="connectWallet()">
+    <div class="wdot" id="wdot"></div>
+    <span id="wlbl">Connect wallet</span>
+  </button>
+</nav>
+
+<!-- ════════ PAGE: ONBOARDING ════════ -->
+<div class="page active" id="page-onboard">
+  <div class="page-nav">
+    <button class="page-nav-btn" disabled>← Back</button>
+    <span class="page-nav-center">Step 1 of 3</span>
+    <button class="page-nav-btn" id="onboard-next-btn" disabled onclick="startChallenge()">Next →</button>
+  </div>
+  <div class="onboard">
+    <div class="onboard-hero">
+      <h1>21 days.<br><em>Earn Circles.</em></h1>
+      <p>Choose daily rituals, show up every day, and climb the leaderboard. The arbitrage bot distributes <strong>CRC rewards</strong> to the top performers at the end.</p>
+    </div>
+    <div class="steps-strip">
+      <div class="step active"><div class="step-num">1</div><div class="step-label">Pick habits</div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-label">Daily check-in</div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-label">Earn CRC</div></div>
+    </div>
+    <div class="section-head">
+      <h2>Choose your habits</h2>
+      <span>+ to select · ℹ to learn more</span>
+    </div>
+    <div class="habit-grid" id="habit-picker"></div>
+
+    <!-- Add My Habit card -->
+    <div style="margin-bottom:20px">
+      <button onclick="openCustomHabit()" style="width:100%;padding:14px 16px;border-radius:var(--r);background:var(--surface);border:1.5px dashed var(--b2);color:var(--t2);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:9px" onmouseover="this.style.borderColor='var(--al)';this.style.color='var(--al)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--t2)'">
+        <span style="font-size:18px">✨</span> Add my own habit
+      </button>
+    </div>
+
+    <div class="select-tally">
+      <div class="tally-left"><strong id="sel-count">0</strong> / 10 selected</div>
+      <div class="tally-dots" id="tally-dots"></div>
+    </div>
+    <button class="cta-btn" id="start-btn" disabled onclick="startChallenge()">
+      Begin 21-Day Challenge
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ════════ PAGE: DASHBOARD ════════ -->
+<div class="page" id="page-dashboard">
+  <div class="page-nav">
+    <button class="page-nav-btn" onclick="goBack()">← Back</button>
+    <span class="page-nav-center" id="dash-nav-label">Today</span>
+    <button class="page-nav-btn" onclick="switchTab('progress')">Progress →</button>
+  </div>
+  <div class="dashboard">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('today')">Today</div>
+      <div class="tab" onclick="switchTab('progress')">Progress</div>
+      <div class="tab" onclick="switchTab('leaderboard')">Leaderboard</div>
+    </div>
+
+    <!-- TAB: TODAY -->
+    <div class="tc active" id="tab-today">
+      <div class="hero-banner">
+        <div class="hero-top">
+          <div class="ring-wrap">
+            <svg viewBox="0 0 60 60">
+              <circle class="rbg" cx="30" cy="30" r="25"/>
+              <circle class="rfill" id="ring-fill" cx="30" cy="30" r="25" stroke="url(#rg)" stroke-dasharray="157" stroke-dashoffset="157"/>
+              <defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#6c5ce7"/><stop offset="100%" stop-color="#00cec9"/></linearGradient></defs>
+            </svg>
+            <div class="rlabel" id="ring-pct">0%</div>
+          </div>
+          <div class="hero-info">
+            <h3 id="banner-title">Day 1 of 21</h3>
+            <p id="banner-sub">Complete your habits to build momentum.</p>
+          </div>
+        </div>
+        <div class="day-bar-wrap">
+          <div class="day-bar"><div class="day-bar-fill" id="day-bar-fill"></div></div>
+          <div class="day-bar-lbl" id="day-bar-lbl">Day 1 of 21</div>
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card"><div class="sval cg" id="st-streak">0</div><div class="slbl">Streak</div></div>
+        <div class="stat-card"><div class="sval cv" id="st-done">0/0</div><div class="slbl">Today</div></div>
+        <div class="stat-card"><div class="sval ca" id="st-score">0%</div><div class="slbl">Score</div></div>
+      </div>
+
+      <div class="reward-strip">
+        <div class="rs-icon">🪙</div>
+        <div class="rs-text">
+          <div class="rs-title">CRC Reward Pool</div>
+          <div class="rs-sub" id="days-left">21 days remaining</div>
+        </div>
+        <div class="rs-badge" id="score-badge">0%</div>
+      </div>
+
+      <div class="today-hdr">
+        <h2>Today's habits</h2>
+        <span class="today-date" id="today-date"></span>
+      </div>
+      <div class="habit-list" id="habit-list"></div>
+
+      <!-- Sticky Check-In Footer -->
+      <div class="checkin-footer">
+        <div class="checkin-footer-inner">
+          <button class="checkin-big-btn" id="checkin-big-btn" onclick="showCheckin()" disabled>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M5.5 9L8 11.5L12.5 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span id="checkin-btn-label">Complete habits to check in</span>
+          </button>
+          <div class="checkin-progress-hint" id="checkin-hint"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: PROGRESS -->
+    <div class="tc" id="tab-progress">
+      <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:11px">Last 7 days</div>
+      <div class="hmhdr" id="hm-hdrs"></div>
+      <div class="hm-grid" id="hm-grid"></div>
+      <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin:18px 0 11px">Per habit</div>
+      <div class="prog-grid" id="prog-list"></div>
+    </div>
+
+    <!-- TAB: LEADERBOARD -->
+    <div class="tc" id="tab-leaderboard">
+      <div class="bot-card">
+        <div class="bot-hdr">
+          <div class="bot-dot"></div>
+          <div><div class="bot-title">Arb Bot — Active</div><div class="bot-sub">friendly_arb_bot · Gnosis Chain</div></div>
+        </div>
+        <div class="bot-meta">
+          <div class="bot-f"><div class="bot-fl">Pool</div><div class="bot-fv" id="pool-sz">— CRC</div></div>
+          <div class="bot-f"><div class="bot-fl">Payout</div><div class="bot-fv" id="payout-dt">—</div></div>
+          <div class="bot-f"><div class="bot-fl">Recipients</div><div class="bot-fv">Top 3</div></div>
+          <div class="bot-f"><div class="bot-fl">Your rank</div><div class="bot-fv" id="your-rank">#—</div></div>
+        </div>
+      </div>
+      <div class="lb-list" id="lb-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ CONGRATULATIONS POPUP BANNER ════════ -->
+<div class="congrats-overlay" id="congrats-overlay" onclick="handleCongratsOverlayClick(event)">
+  <div class="congrats-banner" id="congrats-banner">
+    <div class="congrats-handle"></div>
+    <div class="congrats-day" id="cg-day">Day 1 of 21</div>
+    <div class="congrats-ring">✓</div>
+    <div class="congrats-title" id="cg-title">You did it.<br><em>Day complete.</em></div>
+    <div class="congrats-sub" id="cg-sub">All habits checked off. Your streak is growing.</div>
+    <div class="congrats-stats" id="cg-stats"></div>
+    <button class="congrats-close-btn" onclick="closeCongratsGoCalendar()">
+      <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><rect x="1" y="1" width="15" height="15" rx="3.5" stroke="currentColor" stroke-width="1.4"/><path d="M5 8.5h7M9.5 6L12 8.5 9.5 11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      View my calendar
+    </button>
+    <button class="congrats-dismiss" onclick="closeCongratsStay()">Stay on today's view</button>
+  </div>
+</div>
+
+<!-- ════════ PAGE: CHECK-IN ════════ -->
+<div class="page" id="page-checkin">
+  <div class="page-nav">
+    <button class="page-nav-btn" onclick="showPage('dashboard')">← Back</button>
+    <span class="page-nav-center">Day Complete</span>
+    <button class="page-nav-btn" disabled>Next →</button>
+  </div>
+  <div class="checkin-page">
+    <div class="checkin-circle">✓</div>
+    <div class="checkin-title" id="ci-title">Day complete!</div>
+    <div class="checkin-sub" id="ci-sub">You've checked off all your habits. See you tomorrow.</div>
+    <div class="checkin-stats" id="ci-stats"></div>
+
+    <div class="cal-section">
+      <div class="cal-header">
+        <div class="cal-month" id="cal-month"></div>
+        <div style="font-size:11px;color:var(--t3)">21-day challenge</div>
+      </div>
+      <div class="cal-days-hdr">
+        <div class="cal-day-hdr">M</div><div class="cal-day-hdr">T</div><div class="cal-day-hdr">W</div>
+        <div class="cal-day-hdr">T</div><div class="cal-day-hdr">F</div><div class="cal-day-hdr">S</div><div class="cal-day-hdr">S</div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+
+    <button class="continue-btn" onclick="showPage('dashboard')">
+      Continue to dashboard
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="secondary-btn" onclick="showPage('dashboard')">View full progress</button>
+  </div>
+</div>
+
+<!-- ════════ VERIFY MODAL ════════ -->
+<div class="modal-overlay" id="verify-modal">
+  <div class="modal">
+    <h3 id="vm-title">Verify completion</h3>
+    <p id="vm-desc"></p>
+    <div class="upload-zone" id="upload-zone">
+      <input type="file" id="verify-file-input" accept="image/*" onchange="handleUpload(event)">
+      <div class="upload-icon" id="upload-icon">📸</div>
+      <div class="upload-text" id="upload-text">Upload a screenshot</div>
+      <div class="upload-sub" id="upload-sub">From any health or fitness app</div>
+      <img class="upload-preview" id="upload-preview" alt="preview"/>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;background:rgba(253,203,110,.07);border:1px solid rgba(253,203,110,.15);border-radius:var(--rxs);padding:9px 12px;margin-bottom:16px;font-size:12px;color:var(--t2)">
+      <span style="font-size:15px">⚖️</span>
+      <span>Verified = <strong style="color:var(--green2)">1.0 pt</strong> &nbsp;·&nbsp; Without proof = <strong style="color:var(--al)">0.5 pts</strong></span>
+    </div>
+    <div class="modal-btns" style="flex-direction:column;gap:8px">
+      <button class="btn-confirm" id="vm-confirm" onclick="closeVerifyModal('verified')" disabled style="opacity:.5">
+        Confirm with proof ✓
+      </button>
+      <button class="btn-cancel" onclick="closeVerifyModal('unverified')" style="border-color:rgba(162,155,254,.3);color:var(--al)">
+        Complete without proof <span style="opacity:.6;font-size:11px">(−50% score)</span>
+      </button>
+      <button class="btn-cancel" onclick="closeVerifyModal('cancel')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- TX Modal (on-chain confirm) -->
+<div class="modal-overlay" id="tx-modal">
+  <div class="modal">
+    <h3 id="tm-title">Record on Gnosis Chain</h3>
+    <p id="tm-body"></p>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeTxModal(false)">Cancel</button>
+      <button class="btn-confirm" onclick="closeTxModal(true)">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ CUSTOM HABIT MODAL ════════ -->
+<div class="modal-overlay" id="custom-modal-overlay">
+  <div class="custom-modal">
+    <h3>Add your own habit</h3>
+    <p>Pick an emoji and give your habit a name. It'll be added to your selection.</p>
+    <div class="emoji-text-row">
+      <button class="emoji-picker-btn" id="emoji-display" onclick="toggleEmojiPicker()">🌟</button>
+      <input class="custom-name-input" id="custom-name-input" type="text" placeholder="Name your habit…" maxlength="48" oninput="updateCustomPreview()">
+    </div>
+    <!-- Emoji picker panel -->
+    <div id="emoji-picker-panel" style="display:none;margin-bottom:14px">
+      <div class="emoji-grid" id="emoji-grid"></div>
+    </div>
+    <!-- Tag picker -->
+    <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Category</div>
+    <div class="custom-tag-row" id="custom-tag-row"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeCustomHabit(false)">Cancel</button>
+      <button class="btn-confirm" id="custom-confirm-btn" onclick="closeCustomHabit(true)" disabled>Add habit</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// HABIT DATA
+// ══════════════════════════════════════════════════════
+const HABITS = [
+  { id:'stillness', icon:'🧘', name:'Five minutes of stillness', tag:'Mindfulness', color:'#a29bfe',
+    desc:'Sit quietly for five minutes each morning with your eyes closed, focusing only on your breathing.',
+    why:'Short mindfulness sessions lower cortisol and sharpen focus — even five minutes shifts your nervous system out of fight-or-flight mode.',
+    difficulty:'Easy', diffColor:'#55efc4', impact:'High', tipLabel:'Best time', tipVal:'Morning',
+    verify: null },
+  { id:'move', icon:'🏃', name:'Move your body for 20 mins', tag:'Fitness', color:'#55efc4',
+    desc:'Any continuous movement counts — a brisk walk, a run, a workout, or a bike ride.',
+    why:'Regular aerobic activity releases BDNF, a protein that literally grows new brain cells.',
+    difficulty:'Medium', diffColor:'#fdcb6e', impact:'Very high', tipLabel:'Best time', tipVal:'Any time',
+    verify: { type:'upload', label:'Screenshot from fitness app', hint:'Show your activity summary from Apple Health, Strava, Google Fit, or similar.' } },
+  { id:'deepread', icon:'📖', name:'Read with full attention', tag:'Learning', color:'#74b9ff',
+    desc:'Read a physical book or long-form article for at least 20 minutes — phone face-down.',
+    why:'Deep reading builds sustained attention and measurably expands vocabulary and empathy.',
+    difficulty:'Easy', diffColor:'#55efc4', impact:'High', tipLabel:'Pages', tipVal:'15–20',
+    verify: null },
+  { id:'hydrate', icon:'💧', name:'Eight glasses of water', tag:'Health', color:'#74b9ff',
+    desc:'Drink 8 full glasses (about 2 litres) spread across the day.',
+    why:'Even mild dehydration of 1–2% impairs cognitive performance.',
+    difficulty:'Easy', diffColor:'#55efc4', impact:'Medium', tipLabel:'Target', tipVal:'2 litres',
+    verify: null },
+  { id:'journal', icon:'✍️', name:'Write one honest page', tag:'Reflection', color:'#ffeaa7',
+    desc:'Fill one page in a notebook without editing yourself — stream of consciousness.',
+    why:'Expressive writing reduces anxiety, clarifies thinking, and improves immune function.',
+    difficulty:'Easy', diffColor:'#55efc4', impact:'High', tipLabel:'Time', tipVal:'10 mins',
+    verify: { type:'upload', label:'Photo of your journal page', hint:'A quick photo of your written page. Text does not need to be legible.' } },
+  { id:'nophone', icon:'📵', name:'No screen for the first hour', tag:'Digital', color:'#fd79a8',
+    desc:'After waking, avoid all screens for the first 60 minutes of your day.',
+    why:"Avoiding dopamine spikes from social media preserves your morning cortisol peak, your natural focus window.",
+    difficulty:'Hard', diffColor:'#e17055', impact:'Very high', tipLabel:'Duration', tipVal:'60 mins',
+    verify: null },
+  { id:'sleep', icon:'😴', name:'Lights out by 10:30 pm', tag:'Recovery', color:'#6c5ce7',
+    desc:'Be in bed with devices off by 10:30 pm to aim for 7–9 hours of sleep.',
+    why:'Consistent sleep timing synchronises your circadian rhythm, improving memory and hormonal balance.',
+    difficulty:'Medium', diffColor:'#fdcb6e', impact:'Very high', tipLabel:'Target', tipVal:'7–9 hrs',
+    verify: { type:'upload', label:'Sleep tracker screenshot', hint:'A screenshot from Apple Health, Oura, Fitbit, or any sleep tracker showing last night.' } },
+  { id:'grateful', icon:'🙏', name:'Name three good things', tag:'Mindfulness', color:'#fd79a8',
+    desc:'Before sleeping, write or say aloud three specific things that went well today.',
+    why:"Gratitude practice rewires the brain's negativity bias over time.",
+    difficulty:'Easy', diffColor:'#55efc4', impact:'High', tipLabel:'Time', tipVal:'Evening',
+    verify: null },
+  { id:'walk', icon:'🚶', name:'Reach 10,000 steps', tag:'Fitness', color:'#00b894',
+    desc:'Hit 10,000 steps across the day — break it into chunks if needed.',
+    why:'Regular step targets are strongly associated with lower risk of cardiovascular disease.',
+    difficulty:'Medium', diffColor:'#fdcb6e', impact:'High', tipLabel:'Steps', tipVal:'10,000',
+    verify: { type:'upload', label:'Step count screenshot', hint:'Show your step count from Apple Health, Google Fit, Garmin, or your phone pedometer reaching 10,000.' } },
+  { id:'cold', icon:'🚿', name:'End shower with cold water', tag:'Health', color:'#00cec9',
+    desc:'Finish your daily shower with at least 60 seconds of cold water.',
+    why:'Cold exposure activates norepinephrine, linked to mood, alertness and focus.',
+    difficulty:'Hard', diffColor:'#e17055', impact:'High', tipLabel:'Duration', tipVal:'60 secs',
+    verify: null },
+  { id:'nosugar', icon:'🚫', name:'Skip added sugar today', tag:'Nutrition', color:'#e17055',
+    desc:'Avoid anything with added sugar — sweets, sodas, pastries. Fruit is fine.',
+    why:'Going sugar-free for 21 days resets taste preferences and significantly improves insulin sensitivity.',
+    difficulty:'Hard', diffColor:'#e17055', impact:'Very high', tipLabel:'Hardest', tipVal:'Days 1–3',
+    verify: null },
+  { id:'stretch', icon:'🤸', name:'Ten minutes of stretching', tag:'Fitness', color:'#a29bfe',
+    desc:'Follow a simple stretch routine — hips, hamstrings, back, shoulders.',
+    why:'Flexibility work reduces injury risk and releases postural tension from sitting.',
+    difficulty:'Easy', diffColor:'#55efc4', impact:'Medium', tipLabel:'Focus', tipVal:'Hips, back',
+    verify: null },
+  { id:'cook', icon:'🥗', name:'Cook at least one meal', tag:'Nutrition', color:'#00b894',
+    desc:'Prepare at least one full meal from scratch — even a simple one.',
+    why:'People who cook at home regularly consume fewer calories and more nutrients.',
+    difficulty:'Medium', diffColor:'#fdcb6e', impact:'High', tipLabel:'Time needed', tipVal:'20–40 mins',
+    verify: { type:'upload', label:'Photo of your meal', hint:'A quick photo of the meal you cooked counts as verification.' } },
+  { id:'connect', icon:'🤝', name:'Reach out to one person', tag:'Social', color:'#fdcb6e',
+    desc:'Send a meaningful message, make a call, or meet someone — a genuine check-in.',
+    why:'Social connection is the single strongest predictor of long-term happiness.',
+    difficulty:'Easy', diffColor:'#55efc4', impact:'Very high', tipLabel:'Medium', tipVal:'Any channel',
+    verify: null },
+  { id:'breathe', icon:'🌬️', name:'Box breathing for 5 mins', tag:'Mindfulness', color:'#74b9ff',
+    desc:'Inhale 4 counts, hold 4, exhale 4, hold 4 — repeat for 5 minutes.',
+    why:'Box breathing activates the vagus nerve and lowers heart rate within minutes.',
+    difficulty:'Easy', diffColor:'#55efc4', impact:'High', tipLabel:'Pattern', tipVal:'4-4-4-4',
+    verify: null },
+  { id:'create', icon:'🎨', name:'Make something from scratch', tag:'Creativity', color:'#fd79a8',
+    desc:'Spend 20 minutes making something: a sketch, writing, a melody — anything original.',
+    why:'Creative output activates the default mode network and builds cognitive flexibility.',
+    difficulty:'Medium', diffColor:'#fdcb6e', impact:'High', tipLabel:'Time', tipVal:'20+ mins',
+    verify: { type:'upload', label:'Photo of your creation', hint:'A photo or screenshot of what you made today — drawing, writing, music app, anything.' } },
+];
+
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+let S = {
+  wallet: null,
+  started: false,
+  selected: [],
+  startDate: null,
+  completions: {},  // { 'YYYY-MM-DD': { habitId: true } }
+  checkedIn: {},    // { 'YYYY-MM-DD': true }
+  lb: [],
+};
+
+try { const s = localStorage.getItem('hc_v4'); if (s) S = {...S, ...JSON.parse(s)}; } catch(e) {}
+const save = () => { try { localStorage.setItem('hc_v4', JSON.stringify(S)); } catch(e) {} };
+
+// ══════════════════════════════════════════════════════
+// CIRCLES MINI APP postMessage
+// ══════════════════════════════════════════════════════
+let txResolve = null;
+window.addEventListener('message', e => {
+  const {type, address} = e.data || {};
+  if (type === 'wallet_connected') { S.wallet = address; updateWallet(); save(); toast('Wallet connected', 'ok'); }
+  if (type === 'wallet_disconnected') { S.wallet = null; updateWallet(); }
+  if (type === 'tx_success') { toast('Recorded on-chain ✓', 'ok'); if (txResolve) { txResolve(true); txResolve = null; } }
+  if (type === 'tx_rejected') { if (txResolve) { txResolve(false); txResolve = null; } }
+});
+
+function connectWallet() {
+  window.parent?.postMessage({ type: 'request_address' }, '*');
+  setTimeout(() => {
+    if (!S.wallet) {
+      S.wallet = '0x' + Math.random().toString(16).slice(2,10).toUpperCase() + '…b3c1';
+      updateWallet(); save(); toast('Wallet connected (demo)', 'ok');
+    }
+  }, 600);
+}
+
+function requestTx(desc) {
+  return new Promise(resolve => {
+    txResolve = resolve;
+    window.parent?.postMessage({ type:'send_transactions', transactions:[{to:'0x0000000000000000000000000000000000000000',value:'0',data:'0x'}], requestId:Date.now().toString() }, '*');
+    setTimeout(() => { if (txResolve) { openTxModal(desc, resolve); } }, 300);
+  });
+}
+
+function updateWallet() {
+  document.getElementById('wdot').classList.toggle('on', !!S.wallet);
+  document.getElementById('wlbl').textContent = S.wallet || 'Connect wallet';
+}
+
+// ══════════════════════════════════════════════════════
+// HABIT PICKER
+// ══════════════════════════════════════════════════════
+let openPopoverId = null;
+
+function renderPicker() {
+  const grid = document.getElementById('habit-picker');
+  grid.innerHTML = HABITS.map(h => {
+    const sel = S.selected.includes(h.id);
+    const needsVerify = !!h.verify;
+    return `
+    <div class="habit-card ${sel?'selected':''}" id="hc-${h.id}">
+      <div class="hcard-bar" style="background:${h.color}"></div>
+      <div class="hcard-inner">
+        <div class="hcard-top">
+          <div class="hcard-icon" style="${sel?`background:${h.color}22`:''}">${h.icon}</div>
+          <div class="hcard-check" id="hchk-${h.id}">
+            <svg class="chk-svg" width="9" height="7" viewBox="0 0 9 7" fill="none">
+              <path d="M1 3.5L3.5 6L8 1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+        <div class="hcard-tag" id="htag-${h.id}" style="${sel?`color:${h.color};border-color:${h.color}44;background:${h.color}11`:''}">${h.tag}${needsVerify?' · verify':''}</div>
+        <div class="hcard-name">${h.name}</div>
+        <div class="hcard-desc">${h.desc}</div>
+        <div class="hcard-actions">
+          <button class="hcard-select-btn" onclick="toggleSelect('${h.id}', event)">${sel?'✓ Selected':'+ Select'}</button>
+          <button class="hcard-info-btn" onclick="togglePopover('${h.id}', event)" title="Details">ℹ</button>
+        </div>
+      </div>
+      <div class="hcard-popover" id="pop-${h.id}">
+        <div class="pop-tag" style="background:${h.color}18;color:${h.color};border:1px solid ${h.color}33">${h.tag}</div>
+        <div class="pop-name">${h.name}</div>
+        <div class="pop-desc">${h.desc}</div>
+        <div class="pop-why">
+          <div class="pop-why-lbl">Why it works</div>
+          <div class="pop-why-text">${h.why}</div>
+        </div>
+        <div class="pop-stats">
+          <div class="pop-stat"><div class="pop-stat-val" style="color:${h.diffColor}">${h.difficulty}</div><div class="pop-stat-lbl">Difficulty</div></div>
+          <div class="pop-stat"><div class="pop-stat-val" style="color:${h.color}">${h.impact}</div><div class="pop-stat-lbl">Impact</div></div>
+          <div class="pop-stat"><div class="pop-stat-val" style="font-size:12px;color:var(--t2)">${h.tipVal}</div><div class="pop-stat-lbl">${h.tipLabel}</div></div>
+        </div>
+        ${h.verify ? `<div style="font-size:11px;color:var(--amber);margin-bottom:10px">📸 Requires verification: ${h.verify.label}</div>` : ''}
+        <div class="pop-action-row">
+          <button class="pop-add-btn ${sel?'remove':''}" id="pop-btn-${h.id}"
+            style="${sel?'':'background:'+h.color}"
+            onclick="toggleSelectFromPop('${h.id}', event)">
+            ${sel ? '− Remove habit' : '+ Add to circle'}
+          </button>
+          <button class="pop-close" onclick="closePopover(event)">✕</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  updateTally();
+  document.addEventListener('click', e => {
+    if (openPopoverId && !e.target.closest('.habit-card')) closeAllPopovers();
+  }, { capture: true });
+}
+
+function toggleSelect(id, e) {
+  e.stopPropagation();
+  const idx = S.selected.indexOf(id);
+  if (idx >= 0) { S.selected.splice(idx, 1); }
+  else {
+    if (S.selected.length >= 10) { toast('Max 10 habits'); return; }
+    S.selected.push(id);
+    const h = HABITS.find(x=>x.id===id);
+    toast(h.icon + ' Added to your circle', 'ok');
+  }
+  refreshCard(id);
+  updateTally();
+}
+
+function toggleSelectFromPop(id, e) {
+  e.stopPropagation();
+  const idx = S.selected.indexOf(id);
+  const h = HABITS.find(x=>x.id===id);
+  if (idx >= 0) {
+    S.selected.splice(idx, 1);
+    toast('Habit removed');
+  } else {
+    if (S.selected.length >= 10) { toast('Max 10 habits'); return; }
+    S.selected.push(id);
+    toast(h.icon + ' Added to your circle', 'ok');
+  }
+  // Update popover button without closing
+  const popBtn = document.getElementById('pop-btn-'+id);
+  const sel = S.selected.includes(id);
+  if (popBtn) {
+    popBtn.textContent = sel ? '− Remove habit' : '+ Add to circle';
+    popBtn.className = 'pop-add-btn ' + (sel ? 'remove' : '');
+    popBtn.style.background = sel ? '' : h.color;
+  }
+  refreshCard(id);
+  updateTally();
+}
+
+function togglePopover(id, e) {
+  e.stopPropagation();
+  if (openPopoverId === id) { closeAllPopovers(); return; }
+  closeAllPopovers();
+  const pop = document.getElementById('pop-'+id);
+  if (pop) { pop.classList.add('open'); openPopoverId = id; }
+}
+
+function closePopover(e) {
+  e && e.stopPropagation();
+  closeAllPopovers();
+}
+
+function closeAllPopovers() {
+  document.querySelectorAll('.hcard-popover.open').forEach(p => p.classList.remove('open'));
+  openPopoverId = null;
+}
+
+function refreshCard(id) {
+  const h = HABITS.find(x=>x.id===id);
+  const card = document.getElementById('hc-'+id);
+  const btn = card?.querySelector('.hcard-select-btn');
+  const icon = card?.querySelector('.hcard-icon');
+  const tag = document.getElementById('htag-'+id);
+  const chk = document.getElementById('hchk-'+id);
+  const sel = S.selected.includes(id);
+
+  if (card) card.classList.toggle('selected', sel);
+  if (btn) { btn.textContent = sel ? '✓ Selected' : '+ Select'; }
+  if (icon) icon.style.background = sel ? h.color+'22' : '';
+  if (tag) tag.style.cssText = sel ? `color:${h.color};border-color:${h.color}44;background:${h.color}11` : '';
+}
+
+function updateTally() {
+  const cnt = S.selected.length;
+  document.getElementById('sel-count').textContent = cnt;
+  const dis = cnt < 1;
+  document.getElementById('start-btn').disabled = dis;
+  document.getElementById('onboard-next-btn').disabled = dis;
+  document.getElementById('tally-dots').innerHTML = Array.from({length:10},(_,i)=>
+    `<div class="tdot ${i<cnt?'on':''}"></div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// CHALLENGE START
+// ══════════════════════════════════════════════════════
+function startChallenge() {
+  if (S.selected.length < 1) return;
+  if (!S.started) {
+    S.started = true;
+    S.startDate = new Date().toISOString().split('T')[0];
+    S.completions = {};
+    S.checkedIn = {};
+    genLB();
+  }
+  save();
+  showPage('dashboard');
+  renderDashboard();
+}
+
+function goBack() {
+  showPage('onboard');
+  renderPicker();
+}
+
+// ══════════════════════════════════════════════════════
+// LEADERBOARD
+// ══════════════════════════════════════════════════════
+const FAKE = ['0x3B4c…d1F0','0xA9e2…8c3b','0x1F7d…9A2c','0xC4b1…0e5f','0x72Aa…3D9e'];
+function genLB() {
+  S.lb = FAKE.map((addr,i) => ({
+    addr, pct: 55+Math.floor(Math.random()*40),
+    avatarColor: ['#a29bfe','#55efc4','#fdcb6e','#fd79a8','#74b9ff'][i]
+  }));
+}
+
+// ══════════════════════════════════════════════════════
+// DASHBOARD RENDER
+// ══════════════════════════════════════════════════════
+function renderDashboard() {
+  const todayK = todayKey();
+  const doneToday = S.completions[todayK] || {};
+  const habits = S.selected.map(id => HABITS.find(h=>h.id===id)).filter(Boolean);
+  const dayN = getDayN();
+
+  let totalDone = 0, totalPoss = dayN * habits.length;
+  Object.values(S.completions).forEach(d => habits.forEach(h => {
+    if (d[h.id]) totalDone += (d[h.id].verified === false ? 0.5 : 1.0);
+  }));
+  const score = totalPoss > 0 ? Math.round((totalDone/totalPoss)*100) : 0;
+  const todayDoneCount = habits.filter(h=>doneToday[h.id]).length;
+
+  // Streak
+  let streak = 0;
+  for (let i=0; i<dayN; i++) {
+    const k = dateKey(-i);
+    if (S.checkedIn[k]) streak++;
+    else break;
+  }
+
+  // Ring
+  const circ = 2*Math.PI*25;
+  document.getElementById('ring-fill').style.strokeDashoffset = circ - (score/100)*circ;
+  document.getElementById('ring-pct').textContent = score+'%';
+
+  document.getElementById('banner-title').textContent = `Day ${dayN} of 21`;
+  document.getElementById('banner-sub').textContent = score>=80 ? 'Top form — your CRC rewards look strong.' : score>=50 ? 'Good pace. A full day lifts you up the board.' : 'Every completed habit counts toward your CRC score.';
+  document.getElementById('day-bar-fill').style.width = ((dayN-1)/20*100)+'%';
+  document.getElementById('day-bar-lbl').textContent = `Day ${dayN} of 21`;
+
+  document.getElementById('st-streak').textContent = streak;
+  document.getElementById('st-done').textContent = todayDoneCount+'/'+habits.length;
+  document.getElementById('st-score').textContent = score+'%';
+  document.getElementById('score-badge').textContent = score+'%';
+  document.getElementById('days-left').textContent = (22-dayN)+' days remaining';
+  document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  document.getElementById('dash-nav-label').textContent = 'Day '+dayN+' / 21';
+
+  // Check-in footer button state
+  const allDone = habits.length > 0 && habits.every(h=>doneToday[h.id]);
+  const anyUnverified = habits.some(h => doneToday[h.id] && doneToday[h.id].verified === false);
+  const checkinBtn = document.getElementById('checkin-big-btn');
+  const checkinLbl = document.getElementById('checkin-btn-label');
+  const checkinHint = document.getElementById('checkin-hint');
+  const alreadyCheckedIn = S.checkedIn[todayK];
+
+  if (alreadyCheckedIn) {
+    checkinBtn.disabled = true;
+    checkinBtn.classList.remove('all-done');
+    checkinLbl.textContent = 'Day checked in ✓';
+    checkinHint.textContent = 'See you tomorrow!';
+  } else if (allDone) {
+    checkinBtn.disabled = false;
+    checkinBtn.classList.add('all-done');
+    checkinLbl.textContent = anyUnverified ? 'Check in (some habits unverified)' : 'Check in — all habits done!';
+    checkinHint.textContent = anyUnverified ? 'Unverified habits count as 0.5 pts each' : 'Tap to record your day and view the calendar';
+  } else {
+    const remaining = habits.length - todayDoneCount;
+    checkinBtn.disabled = true;
+    checkinBtn.classList.remove('all-done');
+    checkinLbl.textContent = remaining === habits.length ? 'Complete habits to check in' : `${remaining} habit${remaining!==1?'s':''} left to check in`;
+    checkinHint.textContent = `${todayDoneCount} of ${habits.length} done today`;
+  }
+
+  // Habit rows
+  document.getElementById('habit-list').innerHTML = habits.map(h => {
+    const completion = doneToday[h.id]; // { verified: true/false } or undefined
+    const done = !!completion;
+    const isVerified = done && completion.verified !== false;
+    const isUnverified = done && completion.verified === false;
+    const dComp = Object.values(S.completions).filter(d=>d[h.id]).length;
+    const barPct = dayN>0 ? Math.round((dComp/dayN)*100) : 0;
+    const needsVerify = !!h.verify;
+
+    let rowClass = 'habit-row';
+    if (done) rowClass += isVerified ? ' done' : ' done unverified';
+
+    let subText = done
+      ? (isVerified ? 'Done · verified ✓' : 'Done · no proof (0.5 pts)')
+      : dComp+'/'+dayN+' days';
+
+    return `<div class="${rowClass}" onclick="handleHabitTap('${h.id}')">
+      <div class="hr-icon" style="${done?`background:${h.color}18`:''}">${h.icon}</div>
+      <div class="hr-info">
+        <div class="hr-name">${h.name}</div>
+        <div class="hr-meta">
+          <span class="hr-tag" style="color:${h.color};font-size:10px">${h.tag}</span>
+          <span class="hr-sub" style="${isUnverified?'color:var(--al)':''}">${subText}</span>
+        </div>
+      </div>
+      <div class="hr-bar"><div class="hr-bar-fill" style="width:${barPct}%;background:${h.color}"></div></div>
+      <div class="chk-row">
+        ${needsVerify && !done ? '<span class="verify-badge">📸 verify</span>' : ''}
+        ${isUnverified ? '<span class="unverified-badge">½ pt</span>' : ''}
+        <button class="chkbtn"
+          style="${done ? (isVerified ? `background:${h.color};border-color:${h.color}` : `background:rgba(162,155,254,.25);border-color:var(--al);color:var(--al)`) : ''}"
+          onclick="handleHabitTap('${h.id}'); event.stopPropagation()">
+          ${isVerified ? '✓' : done ? '½' : ''}
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Leaderboard
+  const me = { addr: S.wallet||'0xYou', pct: score, avatarColor:'#6c5ce7', isMe:true };
+  const lb = [...S.lb, me].sort((a,b)=>b.pct-a.pct);
+  const myRank = lb.findIndex(e=>e.isMe)+1;
+  document.getElementById('your-rank').textContent = '#'+myRank;
+  document.getElementById('lb-list').innerHTML = lb.slice(0,6).map((e,i)=>{
+    const rank=i+1, medal=rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':rank;
+    return `<div class="lb-row ${e.isMe?'me':''}">
+      <div class="lb-rank ${rank<=3?'top':''}">${medal}</div>
+      <div class="lb-av" style="background:${e.avatarColor}22;color:${e.avatarColor}">${(e.isMe?'ME':e.addr.slice(2,4)).toUpperCase()}</div>
+      <div class="lb-name">${e.isMe?'You ('+shortAddr(S.wallet)+')':e.addr}</div>
+      <div class="lb-r"><div class="lb-pct">${e.pct}%</div>${rank<=3?'<div class="lb-crc">earns CRC</div>':''}</div>
+    </div>`;
+  }).join('');
+
+  const start = new Date(S.startDate||new Date());
+  const payout = new Date(start); payout.setDate(payout.getDate()+21);
+  document.getElementById('payout-dt').textContent = payout.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  document.getElementById('pool-sz').textContent = (habits.length*12)+' CRC';
+
+  renderHeatmap(habits);
+  renderProgress(habits, dayN);
+}
+
+// ══════════════════════════════════════════════════════
+// HABIT COMPLETION + VERIFICATION
+// ══════════════════════════════════════════════════════
+async function handleHabitTap(habitId) {
+  const todayK = todayKey();
+  if (!S.completions[todayK]) S.completions[todayK] = {};
+
+  // Undo if already done (toggle off)
+  if (S.completions[todayK][habitId]) {
+    delete S.completions[todayK][habitId];
+    save(); renderDashboard(); return;
+  }
+
+  const h = HABITS.find(x=>x.id===habitId);
+
+  // Step 1: verification prompt (if habit requires it)
+  let verified = true;
+  if (h.verify) {
+    const result = await openVerifyModal(h); // returns 'verified' | 'unverified' | 'cancel'
+    if (result === 'cancel') return;
+    verified = result === 'verified';
+  }
+
+  // Step 2: on-chain record (if wallet connected)
+  if (S.wallet) {
+    const ok = await requestTx(`Mark "${h.name}" complete (${verified?'verified':'self-reported'}) for ${todayK}`);
+    if (!ok) return;
+  }
+
+  S.completions[todayK][habitId] = { verified };
+  save(); renderDashboard();
+
+  const pointsMsg = verified ? '1.0 pt' : '0.5 pts (no proof)';
+  toast(`${h.icon} ${h.name} — ${pointsMsg}`, 'ok');
+
+  // Auto show check-in if all habits done
+  const habits = S.selected.map(id=>HABITS.find(h=>h.id===id)).filter(Boolean);
+  const doneToday = S.completions[todayK] || {};
+  if (habits.every(h=>doneToday[h.id])) {
+    setTimeout(() => showCheckin(), 800);
+  }
+}
+
+// ── Verify Modal ──
+let verifyResolve = null;
+
+function openVerifyModal(h) {
+  return new Promise(resolve => {
+    verifyResolve = resolve;
+    document.getElementById('vm-title').textContent = 'Verify: ' + h.name;
+    document.getElementById('vm-desc').textContent = h.verify.hint;
+    document.getElementById('upload-icon').textContent = '📸';
+    document.getElementById('upload-text').textContent = h.verify.label;
+    document.getElementById('upload-sub').textContent = 'Tap to choose a screenshot';
+    document.getElementById('upload-preview').classList.remove('show');
+    document.getElementById('upload-zone').classList.remove('has-file');
+    document.getElementById('verify-file-input').value = '';
+    document.getElementById('vm-confirm').disabled = true;
+    document.getElementById('vm-confirm').style.opacity = '0.5';
+    document.getElementById('verify-modal').classList.add('open');
+  });
+}
+
+function handleUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = document.getElementById('upload-preview');
+    img.src = ev.target.result;
+    img.classList.add('show');
+    document.getElementById('upload-icon').textContent = '✅';
+    document.getElementById('upload-text').textContent = 'Screenshot uploaded';
+    document.getElementById('upload-sub').textContent = file.name;
+    document.getElementById('upload-zone').classList.add('has-file');
+    document.getElementById('vm-confirm').disabled = false;
+    document.getElementById('vm-confirm').style.opacity = '1';
+  };
+  reader.readAsDataURL(file);
+}
+
+// result: 'verified' | 'unverified' | 'cancel'
+function closeVerifyModal(result) {
+  document.getElementById('verify-modal').classList.remove('open');
+  if (verifyResolve) { verifyResolve(result); verifyResolve = null; }
+}
+
+// TX modal
+let txModalRes = null;
+function openTxModal(desc, resolve) {
+  txModalRes = resolve;
+  document.getElementById('tm-body').textContent = desc;
+  document.getElementById('tx-modal').classList.add('open');
+}
+function closeTxModal(ok) {
+  document.getElementById('tx-modal').classList.remove('open');
+  if (txModalRes) { txModalRes(ok); txModalRes = null; }
+  if (txResolve) { txResolve(ok); txResolve = null; }
+}
+
+// ══════════════════════════════════════════════════════
+// CHECK-IN SCREEN
+// ══════════════════════════════════════════════════════
+function showCheckin() {
+  const todayK = todayKey();
+  S.checkedIn[todayK] = true;
+  save();
+  renderDashboard(); // re-render so check-in button shows "Day checked in ✓"
+
+  const habits = S.selected.map(id=>HABITS.find(h=>h.id===id)).filter(Boolean);
+  const dayN = getDayN();
+  const doneToday = S.completions[todayK] || {};
+  const todayDoneCount = habits.filter(h=>doneToday[h.id]).length;
+
+  let totalDone=0, totalPoss=dayN*habits.length;
+  Object.values(S.completions).forEach(d=>habits.forEach(h=>{
+    if(d[h.id]) totalDone += (d[h.id].verified === false ? 0.5 : 1.0);
+  }));
+  const score = totalPoss>0?Math.round((totalDone/totalPoss)*100):0;
+
+  let streak=0;
+  for(let i=0;i<dayN;i++){
+    if(S.checkedIn[dateKey(-i)])streak++;
+    else break;
+  }
+
+  // Populate congrats banner
+  document.getElementById('cg-day').textContent = `Day ${dayN} of 21`;
+
+  const allVerified = habits.every(h => !doneToday[h.id] || doneToday[h.id].verified !== false);
+  if (allVerified) {
+    document.getElementById('cg-title').innerHTML = `You did it.<br><em>Day complete.</em>`;
+    document.getElementById('cg-sub').textContent = `All ${habits.length} habits verified. Your streak is on fire.`;
+  } else {
+    document.getElementById('cg-title').innerHTML = `Day ${dayN}<br><em>checked in.</em>`;
+    document.getElementById('cg-sub').textContent = `Good work. Some habits were self-reported — verification earns full points.`;
+  }
+
+  document.getElementById('cg-stats').innerHTML = `
+    <div class="cstat"><div class="cstat-val" style="color:var(--green2)">${streak}</div><div class="cstat-lbl">Streak</div></div>
+    <div class="cstat"><div class="cstat-val" style="color:var(--al)">${todayDoneCount}/${habits.length}</div><div class="cstat-lbl">Today</div></div>
+    <div class="cstat"><div class="cstat-val" style="color:var(--amber)">${score}%</div><div class="cstat-lbl">Score</div></div>
+  `;
+
+  // Open the popup
+  const overlay = document.getElementById('congrats-overlay');
+  overlay.classList.add('open');
+}
+
+function handleCongratsOverlayClick(e) {
+  if (e.target === document.getElementById('congrats-overlay')) closeCongratsStay();
+}
+
+function closeCongratsGoCalendar() {
+  document.getElementById('congrats-overlay').classList.remove('open');
+  // Build and show the calendar page
+  renderCalendar();
+  // Populate ci-stats and ci-title for the calendar page too
+  const todayK = todayKey();
+  const habits = S.selected.map(id=>HABITS.find(h=>h.id===id)).filter(Boolean);
+  const dayN = getDayN();
+  const doneToday = S.completions[todayK] || {};
+  const todayDoneCount = habits.filter(h=>doneToday[h.id]).length;
+  let totalDone=0, totalPoss=dayN*habits.length;
+  Object.values(S.completions).forEach(d=>habits.forEach(h=>{
+    if(d[h.id]) totalDone += (d[h.id].verified === false ? 0.5 : 1.0);
+  }));
+  const score = totalPoss>0?Math.round((totalDone/totalPoss)*100):0;
+  let streak=0;
+  for(let i=0;i<dayN;i++){if(S.checkedIn[dateKey(-i)])streak++;else break;}
+  document.getElementById('ci-title').textContent = `Day ${dayN} complete!`;
+  document.getElementById('ci-sub').textContent = todayDoneCount===habits.length
+    ? `You nailed all ${habits.length} habits today. Keep the streak alive.`
+    : `You completed ${todayDoneCount} of ${habits.length} habits. Every day counts.`;
+  document.getElementById('ci-stats').innerHTML = `
+    <div class="cs-card"><div class="cs-val" style="color:var(--green2)">${streak}</div><div class="cs-lbl">Day streak</div></div>
+    <div class="cs-card"><div class="cs-val" style="color:var(--al)">${todayDoneCount}/${habits.length}</div><div class="cs-lbl">Today</div></div>
+    <div class="cs-card"><div class="cs-val" style="color:var(--amber)">${score}%</div><div class="cs-lbl">21-day score</div></div>
+  `;
+  showPage('checkin');
+}
+
+function closeCongratsStay() {
+  document.getElementById('congrats-overlay').classList.remove('open');
+  // Just close the popup, stay on dashboard
+}
+
+function renderCalendar() {
+  const start = new Date(S.startDate || new Date());
+  const today = new Date(todayKey());
+  const month = start.toLocaleDateString('en-US', {month:'long', year:'numeric'});
+  document.getElementById('cal-month').textContent = month;
+
+  const grid = document.getElementById('cal-grid');
+
+  // Start calendar from Monday of the week containing day 1
+  const startDow = (start.getDay() + 6) % 7; // Mon=0
+  const calStart = new Date(start);
+  calStart.setDate(calStart.getDate() - startDow);
+
+  // Build 21 challenge days set
+  const challengeDays = new Set();
+  for (let i=0; i<21; i++) {
+    const d = new Date(start); d.setDate(d.getDate()+i);
+    challengeDays.add(d.toISOString().split('T')[0]);
+  }
+
+  // Render 5 weeks (35 cells)
+  let cells = '';
+  for (let i=0; i<35; i++) {
+    const d = new Date(calStart); d.setDate(calStart.getDate()+i);
+    const key = d.toISOString().split('T')[0];
+    const isChallenge = challengeDays.has(key);
+    const isToday = key === todayKey();
+    const isDone = S.checkedIn[key];
+    const isFuture = d > today;
+
+    let cls = 'cal-cell';
+    if (isToday) cls += ' today-cell';
+    else if (isDone) cls += ' done';
+    else if (isChallenge && !isFuture) cls += ' in-challenge';
+    else if (isChallenge && isFuture) cls += ' future-cell in-challenge';
+    else cls += ' future-cell';
+
+    const dayNum = d.getDate();
+    const onclick = isChallenge && !isFuture ? `onclick="calDayClick('${key}')"` : '';
+    cells += `<div class="${cls}" ${onclick} title="${key}">${dayNum}</div>`;
+  }
+  grid.innerHTML = cells;
+}
+
+function calDayClick(dateKey) {
+  // Show that day's habits (read-only if past, editable if today)
+  const isToday = dateKey === todayKey();
+  if (isToday) {
+    showPage('dashboard');
+    renderDashboard();
+  } else {
+    // For past days just show a toast with completion info
+    const habits = S.selected.map(id=>HABITS.find(h=>h.id===id)).filter(Boolean);
+    const done = S.completions[dateKey] || {};
+    const cnt = habits.filter(h=>done[h.id]).length;
+    const d = new Date(dateKey+'T12:00:00');
+    toast(d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+': '+cnt+'/'+habits.length+' habits done');
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// PROGRESS + HEATMAP
+// ══════════════════════════════════════════════════════
+function renderHeatmap(habits) {
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const now = new Date();
+  document.getElementById('hm-hdrs').innerHTML = days.map(d=>`<div class="hm-day">${d}</div>`).join('');
+  document.getElementById('hm-grid').innerHTML = Array.from({length:7},(_,i)=>{
+    const d=new Date(now); d.setDate(d.getDate()-(6-i));
+    const key=d.toISOString().split('T')[0];
+    const comp=S.completions[key]||{};
+    const pct=habits.length>0?habits.filter(h=>comp[h.id]).length/habits.length:0;
+    const lvl=pct===0?'0':pct<.4?'low':pct<.8?'mid':'high';
+    return `<div class="hm-cell" data-p="${lvl}" title="${Math.round(pct*100)}% on ${key}"></div>`;
+  }).join('');
+}
+
+function renderProgress(habits, dayN) {
+  document.getElementById('prog-list').innerHTML = habits.map(h=>{
+    const completions = Object.values(S.completions).filter(d=>d[h.id]);
+    const pts = completions.reduce((sum, d) => sum + (d[h.id].verified === false ? 0.5 : 1.0), 0);
+    const pct = dayN>0 ? Math.round((pts/dayN)*100) : 0;
+    const verifiedCount = completions.filter(d=>d[h.id].verified !== false).length;
+    const unverifiedCount = completions.length - verifiedCount;
+    return `<div class="prog-item">
+      <div class="prog-top">
+        <div class="prog-icon">${h.icon}</div>
+        <div class="prog-name">${h.name}</div>
+        <div class="prog-pct" style="color:${h.color}">${pct}%</div>
+      </div>
+      <div class="prog-bar"><div class="prog-bar-fill" style="width:${pct}%;background:${h.color}"></div></div>
+      ${unverifiedCount>0?`<div style="font-size:10px;color:var(--al);margin-top:5px">${verifiedCount} verified · ${unverifiedCount} self-reported</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════
+function todayKey() { return new Date().toISOString().split('T')[0]; }
+function dateKey(offset) { const d=new Date(); d.setDate(d.getDate()+offset); return d.toISOString().split('T')[0]; }
+function getDayN() {
+  if (!S.startDate) return 1;
+  const diff = Math.floor((new Date()-new Date(S.startDate))/86400000)+1;
+  return Math.min(Math.max(diff,1),21);
+}
+function shortAddr(a) { return a?(a.length>12?a.slice(0,6)+'…'+a.slice(-4):a):''; }
+
+function showPage(n) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+n)?.classList.add('active');
+}
+
+function switchTab(n) {
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['today','progress','leaderboard'][i]===n));
+  document.querySelectorAll('.tc').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+n)?.classList.add('active');
+}
+
+let _toastT;
+function toast(msg, cls) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'toast show'+(cls?' '+cls:'');
+  clearTimeout(_toastT); _toastT = setTimeout(()=>el.className='toast', 2800);
+}
+
+// ══════════════════════════════════════════════════════
+// CUSTOM HABIT
+// ══════════════════════════════════════════════════════
+const EMOJI_LIST = ['🌟','💪','🎯','🧠','🌱','🔥','⚡','🎵','🌍','🏆','❤️','🦋','🌸','🍎','🧘','🏃','📖','💧','✍️','🙏','🚶','🚿','🥗','🤝','🎨','🌬️','🧹','🌙','☀️','🎭','🔑','🌈','🦁','🐝','🍃','💎','🧩','🌺','🎸','📝','🏋️','🚴','🧗','🎪','🌻','🍵','🧘','🤸','🎯','🔮','🌊','🎬','🎤','🌙','💫'];
+const CUSTOM_TAGS = ['Mindfulness','Fitness','Health','Learning','Nutrition','Creativity','Social','Digital','Recovery','Reflection','Personal'];
+const CUSTOM_COLORS = { Mindfulness:'#a29bfe',Fitness:'#55efc4',Health:'#74b9ff',Learning:'#74b9ff',Nutrition:'#00b894',Creativity:'#fd79a8',Social:'#fdcb6e',Digital:'#fd79a8',Recovery:'#6c5ce7',Reflection:'#ffeaa7',Personal:'#a29bfe' };
+
+let customEmoji = '🌟';
+let customTag = 'Personal';
+let emojiPickerOpen = false;
+
+function openCustomHabit() {
+  customEmoji = '🌟';
+  customTag = 'Personal';
+  emojiPickerOpen = false;
+  document.getElementById('emoji-display').textContent = customEmoji;
+  document.getElementById('custom-name-input').value = '';
+  document.getElementById('custom-confirm-btn').disabled = true;
+  document.getElementById('emoji-picker-panel').style.display = 'none';
+
+  // Build emoji grid
+  document.getElementById('emoji-grid').innerHTML = EMOJI_LIST.map(e =>
+    `<div class="emoji-opt ${e===customEmoji?'picked':''}" onclick="pickEmoji('${e}')">${e}</div>`
+  ).join('');
+
+  // Build tag row
+  document.getElementById('custom-tag-row').innerHTML = CUSTOM_TAGS.map(t =>
+    `<div class="ctag ${t===customTag?'picked':''}" onclick="pickTag('${t}')">${t}</div>`
+  ).join('');
+
+  document.getElementById('custom-modal-overlay').classList.add('open');
+}
+
+function toggleEmojiPicker() {
+  emojiPickerOpen = !emojiPickerOpen;
+  document.getElementById('emoji-picker-panel').style.display = emojiPickerOpen ? 'block' : 'none';
+}
+
+function pickEmoji(e) {
+  customEmoji = e;
+  document.getElementById('emoji-display').textContent = e;
+  document.querySelectorAll('.emoji-opt').forEach(el => el.classList.toggle('picked', el.textContent === e));
+  document.getElementById('emoji-picker-panel').style.display = 'none';
+  emojiPickerOpen = false;
+  updateCustomPreview();
+}
+
+function pickTag(t) {
+  customTag = t;
+  document.querySelectorAll('.ctag').forEach(el => el.classList.toggle('picked', el.textContent === t));
+}
+
+function updateCustomPreview() {
+  const name = document.getElementById('custom-name-input').value.trim();
+  document.getElementById('custom-confirm-btn').disabled = name.length < 2;
+}
+
+function closeCustomHabit(confirmed) {
+  if (confirmed) {
+    const name = document.getElementById('custom-name-input').value.trim();
+    if (!name || name.length < 2) return;
+    if (S.selected.length >= 10) { toast('Max 10 habits'); return; }
+    const id = 'custom_' + Date.now();
+    const color = CUSTOM_COLORS[customTag] || '#a29bfe';
+    const newHabit = {
+      id, icon: customEmoji, name, tag: customTag, color,
+      desc: 'Your custom habit. Mark it complete each day to build your streak.',
+      why: 'You defined this habit yourself — that makes it more likely to stick.',
+      difficulty: 'Custom', diffColor: '#a29bfe', impact: 'Personal',
+      tipLabel: 'Your habit', tipVal: 'Custom',
+      verify: null, isCustom: true,
+    };
+    HABITS.push(newHabit);
+    S.selected.push(id);
+    if (!S.customHabits) S.customHabits = [];
+    S.customHabits.push(newHabit);
+    save();
+    // Re-render picker so new card appears
+    renderPicker();
+    toast(customEmoji + ' ' + name + ' added!', 'ok');
+  }
+  document.getElementById('custom-modal-overlay').classList.remove('open');
+}
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+renderPicker();
+updateWallet();
+// Restore custom habits stored in state
+if (S.customHabits) S.customHabits.forEach(h => { if (!HABITS.find(x=>x.id===h.id)) HABITS.push(h); });
+if (S.started) { showPage('dashboard'); renderDashboard(); }
+</script>
+</body>
+</html>

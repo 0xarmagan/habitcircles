@@ -5,6 +5,7 @@
     challengeDay,
     overallScore,
     currentStreak,
+    verifiedRatio,
     recordCompletion,
     removeCompletion,
     recordCheckIn,
@@ -12,7 +13,10 @@
     dateKey
   } from '$lib/stores/state';
   import { wallet } from '$lib/stores/wallet';
-  import { computeScore, habitBreakdown, heatLevel } from '$lib/utils/scoring';
+  import {
+    computeScore, habitBreakdown, heatLevel,
+    computeUserWeight, computeReward, streakMultiplier
+  } from '$lib/utils/scoring';
   import { showToast } from '$lib/components/Toast.svelte';
   import VerifyModal from '$lib/components/VerifyModal.svelte';
   import TxModal from '$lib/components/TxModal.svelte';
@@ -47,7 +51,13 @@
   $: ringOffset = 157 - (ringPct / 100) * 157;
   $: dayBarWidth = (($challengeDay - 1) / 20) * 100;
 
-  // Leaderboard
+  // ── Reward formula ──────────────────────────────────────────
+  $: cyclePool = $appState.cyclePool ?? 500;
+
+  // My full weight (score + streak + verification)
+  $: myWeight = computeUserWeight($overallScore, $currentStreak, $verifiedRatio);
+
+  // Leaderboard — other participants use score-only weight (no server data yet)
   $: leaderboard = (() => {
     const me = {
       addr: $wallet.address ?? '0xYou',
@@ -60,8 +70,16 @@
 
   $: myRank = leaderboard.findIndex((e) => e.isMe) + 1;
 
-  // Pool size for leaderboard card
-  $: poolSize = habits.length * 12;
+  $: leaderboardWithRewards = leaderboard.map((e) => {
+    const w = e.isMe ? myWeight : 0.5 + e.pct / 100;
+    return { ...e, weight: w };
+  });
+  $: totalWeight = leaderboardWithRewards.reduce((s, e) => s + e.weight, 0);
+  $: leaderboardFinal = leaderboardWithRewards.map((e) => ({
+    ...e,
+    estimatedCRC: computeReward(e.weight, totalWeight, cyclePool)
+  }));
+  $: myEstimatedReward = leaderboardFinal.find((e) => e.isMe)?.estimatedCRC ?? 0;
 
   $: payoutDate = (() => {
     if (!$appState.startDate) return '—';
@@ -251,10 +269,10 @@
     <div class="reward-strip">
       <div class="rs-icon">🪙</div>
       <div class="rs-text">
-        <div class="rs-title">CRC Reward Pool</div>
-        <div class="rs-sub">{22 - $challengeDay} days remaining</div>
+        <div class="rs-title">Your estimated reward</div>
+        <div class="rs-sub">{cyclePool} CRC pool · {22 - $challengeDay} days left</div>
       </div>
-      <div class="rs-badge">{$overallScore}%</div>
+      <div class="rs-badge">~{myEstimatedReward.toFixed(1)} CRC</div>
     </div>
 
     <!-- Habit list header -->
@@ -415,15 +433,25 @@
         </div>
       </div>
       <div class="bot-meta">
-        <div class="bot-f"><div class="bot-fl">Pool</div><div class="bot-fv">{poolSize} CRC</div></div>
+        <div class="bot-f"><div class="bot-fl">Pool</div><div class="bot-fv">{cyclePool} CRC</div></div>
         <div class="bot-f"><div class="bot-fl">Payout</div><div class="bot-fv">{payoutDate}</div></div>
-        <div class="bot-f"><div class="bot-fl">Recipients</div><div class="bot-fv">Top 3</div></div>
+        <div class="bot-f"><div class="bot-fl">Recipients</div><div class="bot-fv">Everyone</div></div>
         <div class="bot-f"><div class="bot-fl">Your rank</div><div class="bot-fv">#{myRank}</div></div>
+      </div>
+      <div class="bot-formula">
+        <span class="bot-formula-lbl">Your weight:</span>
+        <span>score {(0.5 + $overallScore / 100).toFixed(2)}×</span>
+        <span class="bot-sep">·</span>
+        <span>streak {streakMultiplier($currentStreak).toFixed(2)}×</span>
+        <span class="bot-sep">·</span>
+        <span>verify {(1 + $verifiedRatio * 0.25).toFixed(2)}×</span>
+        <span class="bot-sep">=</span>
+        <span class="bot-weight">{myWeight.toFixed(2)}</span>
       </div>
     </div>
 
     <div class="lb-list">
-      {#each leaderboard.slice(0, 6) as entry, i}
+      {#each leaderboardFinal.slice(0, 6) as entry, i}
         {@const rank = i + 1}
         <div class="lb-row" class:me={entry.isMe}>
           <div class="lb-rank" class:top={rank <= 3}>
@@ -440,7 +468,7 @@
           </div>
           <div class="lb-r">
             <div class="lb-pct">{entry.pct}%</div>
-            {#if rank <= 3}<div class="lb-crc">earns CRC</div>{/if}
+            <div class="lb-crc">~{entry.estimatedCRC.toFixed(1)} CRC</div>
           </div>
         </div>
       {/each}
@@ -768,6 +796,23 @@
   .bot-f { background: var(--s2); border-radius: var(--rxs); padding: 9px 11px; }
   .bot-fl { font-size: 10px; color: var(--t3); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 3px; }
   .bot-fv { font-size: 14px; font-weight: 500; }
+
+  .bot-formula {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+    padding: 8px 10px;
+    background: var(--s3);
+    border-radius: var(--rxs);
+    font-size: 11px;
+    color: var(--t2);
+  }
+
+  .bot-formula-lbl { color: var(--t3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; font-size: 9px; }
+  .bot-sep { color: var(--t3); }
+  .bot-weight { color: var(--al); font-weight: 700; font-size: 13px; }
 
   .lb-list { display: flex; flex-direction: column; gap: 6px; }
   .lb-row { display: flex; align-items: center; gap: 11px; background: var(--surface); border: 1px solid var(--b); border-radius: var(--rsm); padding: 11px 13px; }

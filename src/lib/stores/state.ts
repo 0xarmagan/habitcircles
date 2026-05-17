@@ -5,7 +5,7 @@
 import { writable, derived, get } from 'svelte/store';
 import type { Habit } from '$lib/data/habits';
 
-const STORAGE_KEY = 'hc_v5';
+const STORAGE_KEY = 'hc_v6';
 
 // ── Types ──────────────────────────────────────────────────
 export type CompletionEntry = {
@@ -23,6 +23,7 @@ export type AppState = {
   completions: Record<string, DayCompletions>; // date → habitId → entry
   checkedIn: Record<string, boolean>;           // date → true
   leaderboard: LeaderboardEntry[];
+  cyclePool: number;           // total CRC in the sponsor reward pot for this cycle
 };
 
 export type LeaderboardEntry = {
@@ -41,7 +42,8 @@ const DEFAULT_STATE: AppState = {
   startDate: null,
   completions: {},
   checkedIn: {},
-  leaderboard: []
+  leaderboard: [],
+  cyclePool: 500       // placeholder — set by backend/admin once sponsors contribute
 };
 
 // ── Load from localStorage ─────────────────────────────────
@@ -172,4 +174,19 @@ export const currentStreak = derived(appState, ($s) => {
     else break;
   }
   return streak;
+});
+
+/** Ratio of verified completions across all days (0.0–1.0) */
+export const verifiedRatio = derived(appState, ($s) => {
+  let total = 0;
+  let verified = 0;
+  Object.values($s.completions).forEach((dayMap) => {
+    $s.selected.forEach((id) => {
+      if (dayMap[id]) {
+        total++;
+        if (dayMap[id].verified) verified++;
+      }
+    });
+  });
+  return total > 0 ? verified / total : 0;
 });
